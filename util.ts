@@ -9,3 +9,7 @@ export function sum(xs: readonly number[]) {
     }
     return n;
 }
+
+export function range(start: number, end: number): number[] {
+    return new Array(end - start + 1).fill(0).map((_, i) => i + start);
+}
