@@ -1,4 +1,5 @@
 import { sum } from "../util.ts";
+
 async function main() {
   const fileBuffer = await Deno.readFile("./inputs");
   const fileText = new TextDecoder().decode(fileBuffer);
@@ -7,115 +8,70 @@ async function main() {
 }
 
 export function solvePart1(text: string): number {
-  const equations = text.split("\n");
-
-  const results = equations.map((x) => {
-    const [lhss, rhs] = x.split(": ");
-    const xs = rhs.split(" ").map((x) => Number(x));
-    const lhs = Number(lhss);
-    if (combinations(xs).some((x) => x === lhs)) {
-      return lhs;
-    }
-    return 0;
-  });
-  return sum(results);
+  return sum(
+    text.split("\n").map((eq) => {
+      const [lhs, rhs] = eq.split(": ");
+      const target = Number(lhs);
+      const xs = rhs.split(" ").map(Number);
+      return canSolveEquationPart1(target, xs) ? target : 0;
+    }),
+  );
 }
 
-function combinations(xs: readonly number[]): number[] {
-  const res: number[] = [];
-  const opss: Op[][] = [[]];
-  generateCombinations(opss, xs.length - 1);
-
-  for (const ops of opss) {
-    let lhs = xs[0];
-    for (let i = 0; i < ops.length; i += 1) {
-      const op = ops[i];
-      const rhs = xs[i + 1];
-      lhs = op(lhs, rhs);
-    }
-    res.push(lhs);
+function canSolveEquationPart1(
+  target: number,
+  xs: readonly number[],
+): boolean {
+  if (xs.length === 1) {
+    return target === xs[0];
   }
-  return res;
-}
-
-function generateCombinations(opss: Op[][], goalLen: number) {
-  const startCount = opss.length;
-  const startLen = opss.at(0)?.length ?? 0;
-  for (let i = 0; i < startCount; i++) {
-    const addOps = opss[i];
-    const mulOps = addOps.slice();
-    opss.push(mulOps);
-    addOps.push(add);
-    mulOps.push(mul);
+  if (target < 0) {
+    return false;
   }
-  if (startLen + 1 < goalLen) {
-    generateCombinations(opss, goalLen);
-  }
+  const tail = xs[xs.length - 1];
+  const headSlice = xs.slice(0, xs.length - 1);
+  return canSolveEquationPart1(target - tail, headSlice) ||
+    canSolveEquationPart1(target % tail === 0 ? target / tail : -1, headSlice);
 }
 
 export function solvePart2(text: string): number {
-  const equations = text.split("\n");
-
-  const results = equations.map((x) => {
-    const [lhss, rhs] = x.split(": ");
-    const xs = rhs.split(" ").map((x) => Number(x));
-    const lhs = Number(lhss);
-    if (combinations2(xs).some((x) => x === lhs)) {
-      return lhs;
-    }
-    return 0;
-  });
-  return sum(results);
+  return sum(
+    text.split("\n").map((eq) => {
+      const [lhs, rhs] = eq.split(": ");
+      const target = Number(lhs);
+      const xs = rhs.split(" ").map(Number);
+      return canSolveEquationPart2(target, xs) ? target : 0;
+    }),
+  );
 }
 
-function combinations2(xs: readonly number[]): number[] {
-  const res: number[] = [];
-  const opss: Op[][] = [[]];
-  generateCombinations2(opss, xs.length - 1);
-
-  for (const ops of opss) {
-    let lhs = xs[0];
-    for (let i = 0; i < ops.length; i += 1) {
-      const op = ops[i];
-      const rhs = xs[i + 1];
-      lhs = op(lhs, rhs);
-    }
-    res.push(lhs);
+function canSolveEquationPart2(
+  target: number,
+  xs: readonly number[],
+): boolean {
+  if (xs.length === 1) {
+    return target === xs[0];
   }
-  return res;
-}
-
-function generateCombinations2(opss: Op[][], goalLen: number) {
-  const startCount = opss.length;
-  const startLen = opss.at(0)?.length ?? 0;
-  for (let i = 0; i < startCount; i++) {
-    const addOps = opss[i];
-    const mulOps = addOps.slice();
-    const catOps = addOps.slice();
-    opss.push(mulOps);
-    opss.push(catOps);
-    addOps.push(add);
-    mulOps.push(mul);
-    catOps.push(cat);
+  if (target < 0) {
+    return false;
   }
-  if (startLen + 1 < goalLen) {
-    generateCombinations2(opss, goalLen);
+  const tail = xs[xs.length - 1];
+  const headSlice = xs.slice(0, xs.length - 1);
+  if (canSolveEquationPart2(target - tail, headSlice)) {
+    return true;
   }
+  if (
+    canSolveEquationPart2(target % tail === 0 ? target / tail : -1, headSlice)
+  ) {
+    return true;
+  }
+  return canSolveEquationPart2(uncat(target, tail), headSlice);
 }
 
-type Op = (l: number, r: number) => number;
-
-function add(l: number, r: number) {
-  return l + r;
-}
-
-function mul(l: number, r: number) {
-  return l * r;
-}
-
-function cat(l: number, r: number) {
-  const rLen = Math.floor(Math.log10(r) + 1);
-  return l * (10 ** rLen) + r;
+function uncat(l: number, r: number): number {
+  const delta = l - r;
+  const rMag = 10 ** (Math.floor(Math.log10(r)) + 1);
+  return delta > 0 && delta % rMag === 0 ? delta / rMag : -1;
 }
 
 if (import.meta.main) {
