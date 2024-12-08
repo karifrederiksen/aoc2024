@@ -1,3 +1,5 @@
+import { Grid, MultiMap, Vec2 } from "../util.ts";
+
 async function main() {
   const fileBuffer = await Deno.readFile("./inputs");
   const fileText = new TextDecoder().decode(fileBuffer);
@@ -5,124 +7,77 @@ async function main() {
   console.log(`part2 = `, solvePart2(fileText));
 }
 
-type Pt = readonly [number, number];
-
-function isInBounds(grid: readonly string[], [x, y]: Pt): boolean {
-  return x >= 0 && y >= 0 && x < grid[0].length && y < grid.length;
-}
-
-function compare(l: number, r: number): number {
-  return r > l ? 1 : l > r ? -1 : 0;
-}
-
-function comparePt(l: Pt, r: Pt): number {
-  const xOrd = compare(l[0], r[0]);
-  return xOrd !== 0 ? xOrd : compare(l[1], r[1]);
-}
-
 export function solvePart1(text: string): number {
-  const grid = text.split("\n");
-  const height = grid.length;
-  const width = grid[0].length;
-  const freqs = new Map<string, Pt[]>();
+  const grid = new Grid(text.split("\n").map((ln) => [...ln]));
+  const freqs = new MultiMap<string, Vec2>();
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const freq = grid[y][x];
-      if (freq !== ".") {
-        const points = freqs.get(freq) ?? [];
-        points.push([x, y]);
-        freqs.set(freq, points);
-      }
+  for (const { val, coord } of grid.iter()) {
+    if (val !== ".") {
+      freqs.add(val, coord);
     }
   }
 
-  const antinodes: Pt[] = [];
+  const antinodes: Vec2[] = [];
   for (const [_, pts] of freqs) {
-    for (let i = 0; i < pts.length; i += 1) {
-      for (let j = i + 1; j < pts.length; j += 1) {
-        const [[x1, y1], [x2, y2]] = [pts[i], pts[j]].sort(comparePt);
-        const dx = x2 - x1;
-        const dy = y2 - y1;
+    let i = 1;
+    for (const val1 of pts) {
+      for (const val2 of pts.values().drop(i)) {
+        const min = Vec2.min(val1, val2);
+        const max = Vec2.max(val1, val2);
+        const d = max.sub(min);
+        const apt1 = min.sub(d);
+        const apt2 = max.add(d);
 
-        const aPts = [
-          [x1 - dx, y1 - dy],
-          [x2 + dx, y2 + dy],
-        ] as const;
-
-        for (const aPt of aPts) {
-          if (isInBounds(grid, aPt)) {
-            antinodes.push(aPt);
-          }
-        }
+        if (grid.isInBoundsVec(apt1)) antinodes.push(apt1);
+        if (grid.isInBoundsVec(apt2)) antinodes.push(apt2);
       }
+      i++;
     }
   }
 
-  const uniqueAntiLocations = [
-    ...new Set(antinodes.map(([x, y]) => `${x},${y}`)),
-  ];
-  return uniqueAntiLocations.length;
+  return new Set(antinodes.map((a) => a.toString())).size;
 }
 
 export function solvePart2(text: string): number {
-  const grid = text.split("\n");
-  const height = grid.length;
-  const width = grid[0].length;
-  const freqs = new Map<string, Pt[]>();
+  const grid = new Grid(text.split("\n").map((ln) => [...ln]));
+  const freqs = new MultiMap<string, Vec2>();
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const freq = grid[y][x];
-      if (freq !== ".") {
-        const points = freqs.get(freq) ?? [];
-        points.push([x, y]);
-        freqs.set(freq, points);
-      }
+  for (const { val, coord } of grid.iter()) {
+    if (val !== ".") {
+      freqs.add(val, coord);
     }
   }
 
-  const antinodes: Pt[] = [];
+  const antinodes: Vec2[] = [];
   for (const [_, pts] of freqs) {
-    for (let i = 0; i < pts.length; i += 1) {
-      for (let j = i + 1; j < pts.length; j += 1) {
-        const [[x1, y1], [x2, y2]] = [pts[i], pts[j]].sort(comparePt);
-        const dx = x2 - x1;
-        const dy = y2 - y1;
+    let i = 1;
+    for (const val1 of pts) {
+      for (const val2 of pts.values().drop(i)) {
+        const min = Vec2.min(val1, val2);
+        const max = Vec2.max(val1, val2);
+        const d = max.sub(min);
 
-        for (let i = 0; true; i += 1) {
-          const aPt: Pt = [x1 - dx * i, y1 - dy * i];
-          if (!isInBounds(grid, aPt)) {
+        for (let j = 0; true; j++) {
+          const pt = min.sub(d.mulN(j));
+          if (!grid.isInBoundsVec(pt)) {
             break;
           }
-          antinodes.push(aPt);
+          antinodes.push(pt);
         }
 
-        for (let i = 0; true; i += 1) {
-          const aPt: Pt = [x2 + dx * i, y2 + dy * i];
-          if (!isInBounds(grid, aPt)) {
+        for (let j = 0; true; j++) {
+          const pt = max.add(d.mulN(j));
+          if (!grid.isInBoundsVec(pt)) {
             break;
           }
-          antinodes.push(aPt);
+          antinodes.push(pt);
         }
       }
+      i++;
     }
   }
 
-  // console.log(
-  //   grid.map((ln, y) =>
-  //     [...ln].map((c, x) => {
-  //       if (c !== ".") {
-  //         return c;
-  //       }
-  //       return antinodes.find(([ax, ay]) => x === ax && y === ay) ? "#" : c;
-  //     }).join("")
-  //   ).join("\n"),
-  // );
-  const uniqueAntiLocations = [
-    ...new Set(antinodes.map(([x, y]) => `${x},${y}`)),
-  ];
-  return uniqueAntiLocations.length;
+  return new Set(antinodes.map((a) => a.toString())).size;
 }
 
 if (import.meta.main) {
