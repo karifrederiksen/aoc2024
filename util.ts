@@ -127,6 +127,29 @@ export class Vec2 {
         return new Vec2(this.x, f(this.y));
     }
 
+    up() {
+        return new Vec2(this.x, this.y - 1);
+    }
+
+    down() {
+        return new Vec2(this.x, this.y + 1);
+    }
+
+    left() {
+        return new Vec2(this.x - 1, this.y);
+    }
+
+    right() {
+        return new Vec2(this.x + 1, this.y);
+    }
+
+    assertIsInt(): Vec2 {
+        if (this.x !== Math.round(this.x) || this.y !== Math.round(this.y)) {
+            throw new Error(`Unexpected floating point: ${this}`);
+        }
+        return this;
+    }
+
     *[Symbol.iterator](): Iterator<number> {
         yield this.x;
         yield this.y;
@@ -158,7 +181,7 @@ export class Grid<A> {
     }
 
     get(x: number, y: number): A | undefined {
-        return this.grid.at(y)?.at(x);
+        return this.grid[y]?.[x];
     }
 
     getUnsafeVec({ x, y }: Vec2): A | undefined {
@@ -234,13 +257,13 @@ export class Grid<A> {
         const parts: string[] = [];
         for (let x = 0; x < this.width; x++) {
             const val = this.grid[0][x];
-            parts.push(f(val, 0, x));
+            parts.push(f(val, x, 0));
         }
         for (let y = 1; y < this.height; y++) {
             parts.push("\n");
             for (let x = 0; x < this.width; x++) {
                 const val = this.grid[y][x];
-                parts.push(f(val, y, x));
+                parts.push(f(val, x, y));
             }
         }
         return parts.join("");
@@ -291,5 +314,33 @@ export class MultiMap<K, V> {
         for (const x of this.#map) {
             yield x;
         }
+    }
+}
+
+export class Queue<A> {
+    private read: A[];
+    private write: A[];
+    constructor(items: Iterable<A>) {
+        this.read = [...items];
+        this.write = [];
+    }
+    get length() {
+        return this.read.length + this.write.length;
+    }
+    add(val: A): void {
+        this.write.push(val);
+    }
+    next(): A | null {
+        if (this.read.length > 0) {
+            return this.read.pop()!;
+        }
+        if (this.write.length > 0) {
+            const tmp = this.write;
+            tmp.reverse();
+            this.write = this.read;
+            this.read = tmp;
+            return this.read.pop()!;
+        }
+        return null;
     }
 }
