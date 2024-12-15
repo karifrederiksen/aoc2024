@@ -15,7 +15,39 @@ export function range(start: number, end: number): number[] {
 }
 
 export function compare(l: number, r: number): number {
-    return r > l ? 1 : l > r ? -1 : 0;
+    return l > r ? 1 : r > l ? -1 : 0;
+}
+
+export function* skip<A>(n: number, iterable: Iterable<A>): Iterable<A> {
+    const iter = iterable[Symbol.iterator]();
+    let done = false;
+    for (let skipped = 0; !done && skipped < n; skipped++) {
+        done = iter.next().done ?? false;
+    }
+
+    let val = iter.next();
+    while (!val.done) {
+        yield val.value;
+        val = iter.next();
+    }
+}
+
+export function* take<A>(n: number, iterable: Iterable<A>): Iterable<A> {
+    const iter = iterable[Symbol.iterator]();
+    let res = iter.next();
+    for (let taken = 0; !res.done && taken < n; taken++) {
+        yield res.value;
+        res = iter.next();
+    }
+}
+
+export function first<A>(iterable: Iterable<A>): A | undefined {
+    const iter = iterable[Symbol.iterator]();
+    const res = iter.next();
+    if (res.done) {
+        return undefined;
+    }
+    return res.value;
 }
 
 export class Vec2 {
@@ -333,8 +365,8 @@ export class MultiMap<K, V> {
 export class Queue<A> {
     #read: A[];
     #write: A[];
-    constructor(items: Iterable<A>) {
-        this.#read = [...items];
+    constructor(items?: Iterable<A>) {
+        this.#read = items ? [...items] : [];
         this.#write = [];
     }
     get length() {
