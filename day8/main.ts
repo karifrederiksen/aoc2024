@@ -28,8 +28,8 @@ export function solvePart1(text: string): number {
         const apt1 = min.sub(d);
         const apt2 = max.add(d);
 
-        if (grid.isInBoundsVec(apt1)) antinodes.push(apt1);
-        if (grid.isInBoundsVec(apt2)) antinodes.push(apt2);
+        if (grid.isInBounds(apt1)) antinodes.push(apt1);
+        if (grid.isInBounds(apt2)) antinodes.push(apt2);
       }
       i++;
     }
@@ -59,7 +59,7 @@ export function solvePart2(text: string): number {
 
         for (let j = 0; true; j++) {
           const pt = min.sub(d.mulN(j));
-          if (!grid.isInBoundsVec(pt)) {
+          if (!grid.isInBounds(pt)) {
             break;
           }
           antinodes.push(pt);
@@ -67,7 +67,7 @@ export function solvePart2(text: string): number {
 
         for (let j = 0; true; j++) {
           const pt = max.add(d.mulN(j));
-          if (!grid.isInBoundsVec(pt)) {
+          if (!grid.isInBounds(pt)) {
             break;
           }
           antinodes.push(pt);

@@ -175,40 +175,44 @@ export class Grid<A> {
         }
     }
 
-    getUnsafe(x: number, y: number): A {
+    cloneLayout(): Grid<A> {
+        return new Grid(this.grid.map((x) => x.slice()));
+    }
+
+    scalarGetUnsafe(x: number, y: number): A {
         this.#checkBounds(x, y);
         return this.grid[y][x];
     }
 
-    get(x: number, y: number): A | undefined {
+    scalarGet(x: number, y: number): A | undefined {
         return this.grid[y]?.[x];
     }
 
-    getUnsafeVec({ x, y }: Vec2): A | undefined {
-        return this.getUnsafe(x, y);
+    getUnsafe({ x, y }: Vec2): A | undefined {
+        return this.scalarGetUnsafe(x, y);
     }
 
-    getVec({ x, y }: Vec2): A | undefined {
-        return this.get(x, y);
+    get({ x, y }: Vec2): A | undefined {
+        return this.scalarGet(x, y);
     }
 
-    setUnsafe(x: number, y: number, val: A) {
+    scalarSetUnsafe(x: number, y: number, val: A) {
         this.#checkBounds(x, y);
         this.grid[y][x] = val;
     }
 
-    set(x: number, y: number, val: A) {
-        if (this.isInBounds(x, y)) {
+    scalarSet(x: number, y: number, val: A) {
+        if (this.scalarIsInBounds(x, y)) {
             this.grid[y][x] = val;
         }
     }
 
-    setVec({ x, y }: Vec2, val: A) {
-        this.set(x, y, val);
+    set({ x, y }: Vec2, val: A) {
+        this.scalarSet(x, y, val);
     }
 
-    setVecUnsafe({ x, y }: Vec2, val: A) {
-        this.setUnsafe(x, y, val);
+    setUnsafe({ x, y }: Vec2, val: A) {
+        this.scalarSetUnsafe(x, y, val);
     }
 
     getRow(y: number): readonly A[] {
@@ -223,12 +227,12 @@ export class Grid<A> {
         }
     }
 
-    count(f: (val: A, x: number, y: number) => boolean): number {
+    count(f: (val: A, coord: Vec2) => boolean): number {
         let sum = 0;
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const val = this.grid[y][x];
-                if (f(val, x, y)) {
+                if (f(val, new Vec2(x, y))) {
                     sum++;
                 }
             }
@@ -247,41 +251,50 @@ export class Grid<A> {
     }
 
     toString(): string;
-    toString(f: (val: A, x: number, y: number) => string): string;
+    toString(f: (val: A, coord: Vec2) => string): string;
     toString(
-        f?: ((val: A, x: number, y: number) => string) | undefined,
+        f?: ((val: A, coord: Vec2) => string) | undefined,
     ): string {
-        const defF = (val: A, _x: number, _y: number): string => "" + val;
+        const defF = (val: A, _coord: Vec2): string => "" + val;
         f = f ?? defF;
 
         const parts: string[] = [];
         for (let x = 0; x < this.width; x++) {
             const val = this.grid[0][x];
-            parts.push(f(val, x, 0));
+            parts.push(f(val, new Vec2(x, 0)));
         }
         for (let y = 1; y < this.height; y++) {
             parts.push("\n");
             for (let x = 0; x < this.width; x++) {
                 const val = this.grid[y][x];
-                parts.push(f(val, x, y));
+                parts.push(f(val, new Vec2(x, y)));
             }
         }
         return parts.join("");
     }
 
-    isInBounds(x: number, y: number): boolean {
+    scalarIsInBounds(x: number, y: number): boolean {
         return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
-    isInBoundsVec({ x, y }: Vec2): boolean {
-        return this.isInBounds(x, y);
+    isInBounds({ x, y }: Vec2): boolean {
+        return this.scalarIsInBounds(x, y);
+    }
+
+    find(f: (val: A, coord: Vec2) => boolean): { val: A; coord: Vec2 } | null {
+        for (const x of this.iter()) {
+            if (f(x.val, x.coord)) {
+                return x;
+            }
+        }
+        return null;
     }
 
     #checkBounds(x: number, y: number) {
         if (x !== Math.round(x) || y !== Math.round(y)) {
             throw new Error(`Unexpected floating point: [${x},${y}]`);
         }
-        if (this.isInBounds(x, y)) {
+        if (this.scalarIsInBounds(x, y)) {
             throw new Error(
                 `Out of bounds [${x},${y}]. Width=${this.width}. Height=${this.height}.\n${this}`,
             );
@@ -318,28 +331,28 @@ export class MultiMap<K, V> {
 }
 
 export class Queue<A> {
-    private read: A[];
-    private write: A[];
+    #read: A[];
+    #write: A[];
     constructor(items: Iterable<A>) {
-        this.read = [...items];
-        this.write = [];
+        this.#read = [...items];
+        this.#write = [];
     }
     get length() {
-        return this.read.length + this.write.length;
+        return this.#read.length + this.#write.length;
     }
     add(val: A): void {
-        this.write.push(val);
+        this.#write.push(val);
     }
     next(): A | null {
-        if (this.read.length > 0) {
-            return this.read.pop()!;
+        if (this.#read.length > 0) {
+            return this.#read.pop()!;
         }
-        if (this.write.length > 0) {
-            const tmp = this.write;
+        if (this.#write.length > 0) {
+            const tmp = this.#write;
             tmp.reverse();
-            this.write = this.read;
-            this.read = tmp;
-            return this.read.pop()!;
+            this.#write = this.#read;
+            this.#read = tmp;
+            return this.#read.pop()!;
         }
         return null;
     }

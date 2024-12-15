@@ -35,7 +35,7 @@ export function solvePart1(text: string): number {
       pos.left(),
     ];
     for (const dir of directions) {
-      const dirHeight = grid.getVec(dir);
+      const dirHeight = grid.get(dir);
       if (dirHeight === height + 1) {
         nodeQueue.add({ height: height + 1, path: [...path, dir], pos: dir });
       }
@@ -73,7 +73,7 @@ export function solvePart2(text: string): number {
       pos.left(),
     ];
     for (const dir of directions) {
-      const dirHeight = grid.getVec(dir);
+      const dirHeight = grid.get(dir);
       if (dirHeight === height + 1) {
         nodeQueue.add({ height: height + 1, path: [...path, dir], pos: dir });
       }
