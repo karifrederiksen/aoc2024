@@ -1,4 +1,4 @@
-import { Grid, MultiMap, Vec2 } from "../util.ts";
+import { Grid, MultiMap, Vec2 } from "../util/index.ts";
 
 async function main() {
   const fileBuffer = await Deno.readFile("./inputs");

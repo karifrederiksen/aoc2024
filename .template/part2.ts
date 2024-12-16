@@ -1,4 +1,4 @@
-import { sum } from "../util.ts";
+import { sum } from "../util/index.ts";
 
 export function solvePart2(text: string): number {
   return -1;

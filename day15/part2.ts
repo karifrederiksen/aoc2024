@@ -1,4 +1,4 @@
-import { Grid, sum, Vec2 } from "../util.ts";
+import { Grid, sum, Vec2 } from "../util/index.ts";
 
 export function solvePart2(text: string): number {
   const [gridSrc, movesSrc] = text.split("\n\n");

@@ -1,4 +1,4 @@
-import { Grid, Queue, Vec2 } from "../util.ts";
+import { Grid, Queue, Vec2 } from "../util/index.ts";
 
 export function solvePart2(text: string): number {
   const grid = new Grid(text.split("\n").map((s) => [...s]));

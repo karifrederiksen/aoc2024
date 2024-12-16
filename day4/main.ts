@@ -1,4 +1,4 @@
-import { range, sum } from "../util.ts";
+import { range, sum } from "../util/index.ts";
 
 async function main() {
   const fileBuffer = await Deno.readFile("./inputs");
